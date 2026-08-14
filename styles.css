@@ -112,7 +112,10 @@ th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 88px; }
 th:last-child { width: 42px; }
 td { height: 42px; padding: 5px 9px; border-right: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); color: var(--text-soft); text-align: center; }
 td:last-child { border-right: 0; }
+tbody tr { cursor: pointer; transition: background .12s, box-shadow .12s; }
 tbody tr:hover { background: var(--surface-soft); }
+tbody tr.selected-row { background: var(--primary-soft); box-shadow: inset 4px 0 0 var(--primary); }
+tbody tr.selected-row td { color: var(--text); }
 .product-cell { min-width: 180px; text-align: left; }
 .product-cell strong, .product-cell small { display: block; }
 .product-cell strong { color: var(--text); }

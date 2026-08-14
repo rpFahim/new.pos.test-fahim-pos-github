@@ -50,6 +50,7 @@ const state = {
   products: storage.get("fahimPos.products", DEFAULT_PRODUCTS),
   customers: storage.get("fahimPos.customers", DEFAULT_CUSTOMERS),
   cart: [],
+  selectedCartIndex: -1,
   selectedCustomer: null,
   pendingPhone: "",
   customerMode: "phone",
@@ -204,15 +205,18 @@ function addProduct(product) {
     toast("This product is out of stock.", "error");
     return;
   }
-  const line = state.cart.find((item) => item.id === product.id);
+  const existingIndex = state.cart.findIndex((item) => item.id === product.id);
+  const line = state.cart[existingIndex];
   if (line) {
     if (line.qty >= product.stock) {
       toast(`Only ${product.stock} units are in stock.`, "error");
       return;
     }
     line.qty += 1;
+    state.selectedCartIndex = existingIndex;
   } else {
     state.cart.push({ ...product, qty: 1 });
+    state.selectedCartIndex = state.cart.length - 1;
   }
   renderCart();
   setMessage(el.barcodeMessage, `${product.name} added.`, "success");
@@ -244,13 +248,19 @@ function changeQty(id, delta) {
 }
 
 function removeItem(id) {
-  state.cart = state.cart.filter((item) => item.id !== id);
+  const removedIndex = state.cart.findIndex((item) => item.id === id);
+  if (removedIndex < 0) return;
+  state.cart.splice(removedIndex, 1);
+  if (!state.cart.length) state.selectedCartIndex = -1;
+  else if (state.selectedCartIndex > removedIndex) state.selectedCartIndex -= 1;
+  else if (state.selectedCartIndex === removedIndex) state.selectedCartIndex = Math.min(removedIndex, state.cart.length - 1);
   renderCart();
 }
 
 function clearCart() {
   if (!state.cart.length) return;
   state.cart = [];
+  state.selectedCartIndex = -1;
   renderCart();
   toast("Cart cleared.");
 }
@@ -265,8 +275,10 @@ function totals() {
 }
 
 function renderCart() {
+  if (!state.cart.length) state.selectedCartIndex = -1;
+  else state.selectedCartIndex = Math.min(Math.max(state.selectedCartIndex, 0), state.cart.length - 1);
   el.cartBody.innerHTML = state.cart.map((item, index) => `
-    <tr data-id="${escapeHTML(item.id)}">
+    <tr data-id="${escapeHTML(item.id)}" class="${index === state.selectedCartIndex ? "selected-row" : ""}" aria-selected="${index === state.selectedCartIndex}">
       <td>${index + 1}</td>
       <td class="code-cell">${escapeHTML(item.id)}</td>
       <td class="product-cell"><strong>${escapeHTML(item.name)}</strong><small>${escapeHTML(item.barcode)}</small></td>
@@ -280,6 +292,26 @@ function renderCart() {
   const label = `${state.cart.length} ${state.cart.length === 1 ? "item" : "items"}`;
   el.cartCount.textContent = label;
   updateTotals();
+}
+
+function selectCartIndex(index) {
+  if (!state.cart.length) {
+    state.selectedCartIndex = -1;
+    return;
+  }
+  state.selectedCartIndex = Math.min(Math.max(index, 0), state.cart.length - 1);
+  const rows = [...el.cartBody.querySelectorAll("tr")];
+  rows.forEach((row, rowIndex) => {
+    const selected = rowIndex === state.selectedCartIndex;
+    row.classList.toggle("selected-row", selected);
+    row.setAttribute("aria-selected", String(selected));
+  });
+  rows[state.selectedCartIndex]?.scrollIntoView({ block: "nearest" });
+}
+
+function canUseCartShortcut(target) {
+  if (!(target instanceof HTMLInputElement) && !(target instanceof HTMLTextAreaElement) && !(target instanceof HTMLSelectElement)) return true;
+  return target === el.barcodeInput && !el.barcodeInput.value;
 }
 
 function updateTotals() {
@@ -427,9 +459,11 @@ el.barcodeInput.addEventListener("input", () => setMessage(el.barcodeMessage));
 el.barcodeInput.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); findByBarcode(); } });
 el.searchProduct.addEventListener("click", () => openProductModal(el.barcodeInput.value));
 el.cartBody.addEventListener("click", (event) => {
+  const row = event.target.closest("tr");
+  if (!row) return;
+  selectCartIndex([...el.cartBody.children].indexOf(row));
   const button = event.target.closest("button[data-action]");
   if (!button) return;
-  const row = button.closest("tr");
   const id = row.dataset.id;
   if (button.dataset.action === "increase") changeQty(id, 1);
   if (button.dataset.action === "decrease") changeQty(id, -1);
@@ -454,13 +488,37 @@ el.productList.addEventListener("click", (event) => {
 window.addEventListener("online", updateNetworkStatus);
 window.addEventListener("offline", updateNetworkStatus);
 window.addEventListener("keydown", (event) => {
-  if (event.key === "F2") { event.preventDefault(); el.barcodeInput.focus(); }
+  if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "x") { event.preventDefault(); clearCart(); return; }
+  if (event.key === "F2") { event.preventDefault(); el.barcodeInput.focus(); el.barcodeInput.select(); return; }
   if (event.key === "F3") { event.preventDefault(); openProductModal(); }
-  if (event.key === "F7") { event.preventDefault(); el.paidInput.focus(); el.paidInput.select(); }
-  if (event.key === "F8") { event.preventDefault(); saveCurrentSale({ print: true }); }
-  if (event.key === "Escape" && !el.productModal.classList.contains("hidden")) closeProductModal();
-  if (event.key === "Delete" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName) && state.cart.length) removeItem(state.cart[state.cart.length - 1].id);
-  if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "x") { event.preventDefault(); clearCart(); }
+  if (event.key === "F6") { event.preventDefault(); el.discountInput.focus(); el.discountInput.select(); return; }
+  if (event.key === "F7") { event.preventDefault(); el.paidInput.focus(); el.paidInput.select(); return; }
+  if (event.key === "F8") { event.preventDefault(); saveCurrentSale({ print: true }); return; }
+  if (event.key === "Escape" && !el.productModal.classList.contains("hidden")) { event.preventDefault(); closeProductModal(); return; }
+  if (!el.productModal.classList.contains("hidden") || !state.cart.length || !canUseCartShortcut(event.target)) return;
+
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    if (state.selectedCartIndex < 0) selectCartIndex(event.key === "ArrowDown" ? 0 : state.cart.length - 1);
+    else selectCartIndex(state.selectedCartIndex + (event.key === "ArrowDown" ? 1 : -1));
+    return;
+  }
+
+  const addKey = event.key === "+" || event.code === "NumpadAdd";
+  const subtractKey = event.key === "-" || event.code === "NumpadSubtract";
+  if (addKey || subtractKey) {
+    event.preventDefault();
+    if (state.selectedCartIndex < 0) selectCartIndex(0);
+    const selectedItem = state.cart[state.selectedCartIndex];
+    if (selectedItem) changeQty(selectedItem.id, addKey ? 1 : -1);
+    return;
+  }
+
+  if (event.key === "Delete") {
+    event.preventDefault();
+    const selectedItem = state.cart[state.selectedCartIndex];
+    if (selectedItem) removeItem(selectedItem.id);
+  }
 });
 
 applyTheme(storage.get("fahimPos.theme", window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));

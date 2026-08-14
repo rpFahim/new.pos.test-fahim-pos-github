@@ -11,7 +11,7 @@ A compact, responsive GitHub Pages-ready point-of-sale starter that works in mod
 - Compact thermal receipt printing
 - Local sales, customer and stock storage
 - Installable PWA shell with offline reopening after the first successful visit
-- Keyboard shortcuts: F2, F3, F7, F8, Delete and Ctrl+Shift+X
+- Keyboard shortcuts: F2 barcode, Enter add, F3 search, Up/Down select row, Plus/Minus quantity, Delete selected row, F6 discount, F7 paid amount, F8 paid and print, Esc close popup, and Ctrl+Shift+X clear cart
 
 ## Publish with GitHub Pages
 
