@@ -1,0 +1,19 @@
+{
+  "name": "Fahim POS",
+  "short_name": "Fahim POS",
+  "description": "Fast, offline-ready retail point of sale",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
