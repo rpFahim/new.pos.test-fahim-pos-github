@@ -1,6 +1,6 @@
 # Fahim POS
 
-A responsive, GitHub Pages-ready point-of-sale starter that works in modern desktop and mobile browsers.
+A compact, responsive GitHub Pages-ready point-of-sale starter that works in modern desktop and mobile browsers. The desktop layout uses a single-row sale-entry strip, a dense product table and a right-side billing summary.
 
 ## Included
 

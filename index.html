@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f172a" />
-    <meta name="description" content="Fast, offline-ready retail point of sale" />
-    <title>Fahim POS</title>
+    <meta name="theme-color" content="#70849f" />
+    <meta name="description" content="Compact offline-ready retail point of sale" />
+    <title>S.P Fahim POS</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
@@ -13,26 +13,36 @@
   <body>
     <div class="app">
       <header class="topbar">
-        <div class="brand"><span class="brand-mark" aria-hidden="true">F</span><span><strong>Fahim POS</strong><small>Counter 01</small></span></div>
-        <div class="top-actions">
-          <span class="status-pill" id="networkStatus"><i></i><span>Online</span></span>
-          <label class="paper-control" title="Thermal paper width"><span>Receipt</span><select id="paperSize" aria-label="Thermal receipt size"><option value="58">58mm</option><option value="80">80mm</option></select></label>
-          <button class="icon-button" id="themeToggle" type="button" aria-label="Switch to dark theme" title="Light / Dark theme"><span id="themeIcon" aria-hidden="true">☾</span></button>
-          <button class="cashier" type="button" title="Cashier account"><span class="avatar">FA</span><span class="cashier-copy"><strong>Fahim</strong><small>Cashier</small></span></button>
+        <strong class="brand">S.P Fahim</strong>
+        <div class="session-card">
+          <span>Fahim Muntachir Sifat (POS-01)</span>
+          <button id="logoutButton" type="button"><span aria-hidden="true">↪</span> Logout</button>
+        </div>
+        <div class="header-tools">
+          <span class="status-dot" id="networkStatus" title="Network status"><i></i><span>Online</span></span>
+          <label class="paper-control" title="Thermal paper width">
+            <span>Receipt</span>
+            <select id="paperSize" aria-label="Thermal receipt size"><option value="58">58mm</option><option value="80">80mm</option></select>
+          </label>
+          <button class="theme-button" id="themeToggle" type="button" aria-label="Switch to dark theme" title="Light / Dark theme"><span id="themeIcon" aria-hidden="true">☾</span></button>
         </div>
       </header>
 
-      <main class="workspace">
-        <section class="sale-panel">
-          <div class="sale-heading">
-            <div><p class="eyebrow">New sale</p><h1>Quick Checkout</h1></div>
-            <div class="invoice-meta"><span>Invoice</span><strong id="invoiceNumber">INV-0001</strong></div>
+      <main class="main-shell">
+        <section class="entry-strip" aria-label="Sale information">
+          <div class="entry-field barcode-field">
+            <label for="barcodeInput">Scan or Enter Bar Code</label>
+            <div class="barcode-box">
+              <input id="barcodeInput" autocomplete="off" autofocus />
+              <button id="searchProduct" type="button" aria-label="Find product" title="Find product (F3)">⌕</button>
+            </div>
+            <p class="field-message" id="barcodeMessage" role="status"></p>
           </div>
 
-          <section class="customer-card" aria-labelledby="customerHeading">
-            <div class="section-title-row">
-              <div><h2 id="customerHeading">Customer</h2><p>Optional — leave empty for a walk-in sale</p></div>
-              <button class="text-button hidden" id="changeCustomer" type="button">Change</button>
+          <div class="entry-field customer-field">
+            <div class="customer-label-row">
+              <label for="customerInput" id="customerLabel">Mobile Number</label>
+              <button class="link-button hidden" id="changeCustomer" type="button">Change</button>
             </div>
             <div class="customer-chip hidden" id="customerChip">
               <span class="customer-avatar" aria-hidden="true">✓</span>
@@ -40,55 +50,71 @@
               <button id="removeCustomer" type="button" aria-label="Remove customer">×</button>
             </div>
             <div class="customer-entry" id="customerEntry">
-              <label for="customerInput" id="customerLabel">Customer Mobile <span>Optional</span></label>
-              <div class="input-action-row">
-                <div class="input-wrap"><span class="input-icon" id="customerInputIcon" aria-hidden="true">☎</span><input id="customerInput" inputmode="tel" autocomplete="off" placeholder="01XXXXXXXXX" maxlength="11" /></div>
-                <button class="secondary-button hidden" id="skipCustomerName" type="button">Skip name</button>
-              </div>
-              <p class="field-message" id="customerMessage" role="status"></p>
+              <span class="sr-only" id="customerInputIcon" aria-hidden="true">☎</span>
+              <input id="customerInput" inputmode="tel" autocomplete="off" placeholder="Optional" maxlength="11" />
+              <button class="skip-button hidden" id="skipCustomerName" type="button">Skip</button>
             </div>
-          </section>
+            <p class="field-message" id="customerMessage" role="status"></p>
+          </div>
 
-          <section class="scan-card" aria-labelledby="scanHeading">
-            <div class="section-title-row">
-              <div><h2 id="scanHeading">Scan or add product</h2><p>Scan barcode and press Enter</p></div><span class="shortcut">F2</span>
-            </div>
-            <div class="scan-row">
-              <div class="input-wrap scan-input-wrap"><span class="input-icon" aria-hidden="true">▥</span><input id="barcodeInput" autocomplete="off" placeholder="Barcode or product code" /></div>
-              <button class="primary-button" id="searchProduct" type="button"><span aria-hidden="true">⌕</span> Find product</button>
-            </div>
-            <p class="field-message" id="barcodeMessage" role="status"></p>
-          </section>
+          <div class="entry-field">
+            <label for="customerSerial">Customer Serial</label>
+            <input id="customerSerial" value="0002" readonly />
+          </div>
+          <div class="entry-field">
+            <label for="dateDisplay">Date</label>
+            <input id="dateDisplay" readonly />
+          </div>
+          <div class="entry-field">
+            <label for="invoiceNumber">Invoice No</label>
+            <input id="invoiceNumber" value="1001" readonly />
+          </div>
 
-          <section class="cart-card" aria-labelledby="cartHeading">
-            <div class="cart-head"><div><h2 id="cartHeading">Current cart</h2><span id="cartCount">0 items</span></div><button class="text-button danger-text" id="clearCart" type="button">Clear cart</button></div>
-            <div class="table-wrap">
-              <table><thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Total</th><th><span class="sr-only">Action</span></th></tr></thead><tbody id="cartBody"></tbody></table>
-              <div class="empty-cart" id="emptyCart"><span aria-hidden="true">▤</span><strong>Your cart is empty</strong><p>Scan a barcode or find a product to begin.</p></div>
-            </div>
-          </section>
         </section>
 
-        <aside class="checkout-panel">
-          <div class="checkout-title"><div><p class="eyebrow">Payment</p><h2>Order summary</h2></div><span class="lock" aria-label="Secure checkout">●</span></div>
-          <dl class="summary-list"><div><dt>Items</dt><dd id="summaryItems">0</dd></div><div><dt>Total quantity</dt><dd id="summaryQty">0</dd></div><div><dt>Subtotal</dt><dd id="summarySubtotal">৳0.00</dd></div></dl>
-          <label class="amount-field" for="discountInput"><span>Discount</span><span class="money-input"><b>৳</b><input id="discountInput" inputmode="decimal" value="0" /></span></label>
-          <div class="payable-box"><span>Amount payable</span><strong id="summaryPayable">৳0.00</strong></div>
-          <label class="amount-field paid-field" for="paidInput"><span>Paid amount <small>F7</small></span><span class="money-input"><b>৳</b><input id="paidInput" inputmode="decimal" placeholder="0.00" /></span></label>
-          <div class="settlement-row"><div><span id="settlementLabel">Change return</span><strong id="settlementAmount">৳0.00</strong></div><span class="payment-badge">Cash</span></div>
-          <div class="checkout-actions">
-            <button class="success-button" id="paidPrint" type="button"><span aria-hidden="true">✓</span><span><strong>Paid & Print</strong><small>F8</small></span></button>
-            <div class="split-actions"><button class="secondary-button" id="saveSale" type="button">Save sale</button><button class="secondary-button" id="printOnly" type="button">Print</button></div>
-          </div>
-          <div class="keyboard-help"><span><kbd>F2</kbd> Barcode</span><span><kbd>F3</kbd> Search</span><span><kbd>Del</kbd> Remove</span></div>
-        </aside>
+        <section class="content-grid">
+          <section class="cart-card" aria-label="Current cart">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>SL</th><th>Product Code</th><th>Product Name</th><th>Qty</th><th>Price</th><th>Total</th><th>Stock</th><th><span class="sr-only">Action</span></th></tr>
+                </thead>
+                <tbody id="cartBody"></tbody>
+              </table>
+              <div class="empty-cart" id="emptyCart"><span>Your product list will appear here</span></div>
+            </div>
+            <div class="cart-footer">
+              <span id="cartCount">0 items</span>
+              <button id="clearCart" type="button">Clear All</button>
+            </div>
+          </section>
+
+          <aside class="checkout-panel">
+            <div class="checkout-title"><h1>Billing Summary</h1></div>
+            <dl class="summary-list">
+              <div><dt>Total Items</dt><dd id="summaryItems">0</dd></div>
+              <div><dt>Total Qty</dt><dd id="summaryQty">0</dd></div>
+              <div><dt>Sub Total</dt><dd id="summarySubtotal">0.00 TK</dd></div>
+            </dl>
+            <label class="amount-field" for="discountInput"><span>Discount</span><span class="money-input"><input id="discountInput" inputmode="decimal" value="0.00" /></span></label>
+            <div class="payable-box"><span>Net Payable</span><strong id="summaryPayable">0.00 TK</strong></div>
+            <label class="amount-field" for="paidInput"><span>Paid Amount</span><span class="money-input"><input id="paidInput" inputmode="decimal" /></span></label>
+            <div class="settlement-row"><span id="settlementLabel">Change Return</span><strong id="settlementAmount">0.00 TK</strong></div>
+            <div class="summary-divider"></div>
+            <div class="checkout-actions">
+              <button class="save-button" id="saveSale" type="button">Save Sale</button>
+              <button class="print-button" id="printOnly" type="button">Print Invoice</button>
+              <button class="paid-button" id="paidPrint" type="button">Paid &amp; Print</button>
+            </div>
+          </aside>
+        </section>
       </main>
     </div>
 
     <div class="modal-backdrop hidden" id="productModal" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
       <section class="modal-card">
-        <div class="modal-head"><div><p class="eyebrow">Product catalogue</p><h2 id="productModalTitle">Find product</h2></div><button class="modal-close" id="closeProductModal" type="button" aria-label="Close">×</button></div>
-        <div class="input-wrap modal-search"><span class="input-icon" aria-hidden="true">⌕</span><input id="productSearchInput" placeholder="Search by name, barcode or code" autocomplete="off" /></div>
+        <div class="modal-head"><div><small>PRODUCT CATALOGUE</small><h2 id="productModalTitle">Find Product</h2></div><button class="modal-close" id="closeProductModal" type="button" aria-label="Close">×</button></div>
+        <div class="modal-search"><span aria-hidden="true">⌕</span><input id="productSearchInput" placeholder="Search by name, barcode or code" autocomplete="off" /></div>
         <div class="product-list" id="productList"></div>
       </section>
     </div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "fahim-pos-v1";
+const CACHE_NAME = "fahim-pos-v2";
 const APP_SHELL = [
   "./",
   "./index.html",

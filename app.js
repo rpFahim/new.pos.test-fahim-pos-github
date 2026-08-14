@@ -19,7 +19,8 @@ const $ = (id) => document.getElementById(id);
 const el = {
   html: document.documentElement,
   themeToggle: $("themeToggle"), themeIcon: $("themeIcon"), paperSize: $("paperSize"), networkStatus: $("networkStatus"),
-  invoiceNumber: $("invoiceNumber"), customerInput: $("customerInput"), customerLabel: $("customerLabel"),
+  invoiceNumber: $("invoiceNumber"), dateDisplay: $("dateDisplay"), customerSerial: $("customerSerial"), logoutButton: $("logoutButton"),
+  customerInput: $("customerInput"), customerLabel: $("customerLabel"),
   customerMessage: $("customerMessage"), customerEntry: $("customerEntry"), customerChip: $("customerChip"),
   customerChipName: $("customerChipName"), customerChipPhone: $("customerChipPhone"), customerInputIcon: $("customerInputIcon"),
   removeCustomer: $("removeCustomer"), changeCustomer: $("changeCustomer"), skipCustomerName: $("skipCustomerName"),
@@ -61,13 +62,20 @@ const normalizeDigits = (value) => String(value || "").replace(/[০-৯]/g, (d)
 const cleanPhone = (value) => normalizeDigits(value).replace(/[^0-9]/g, "");
 const validPhone = (phone) => /^01[3-9]\d{8}$/.test(phone);
 const number = (value) => Math.max(0, Number.parseFloat(normalizeDigits(value)) || 0);
-const money = (value) => `৳${Number(value || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (value) => `${Number(value || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TK`;
 const escapeHTML = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" })[char]);
 
 function invoiceNo() {
-  const now = new Date();
-  const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-  return `FP-${date}-${String(state.invoiceCounter).padStart(4, "0")}`;
+  return String(1000 + state.invoiceCounter);
+}
+
+function nextCustomerSerial() {
+  return String(state.customers.length + 1).padStart(4, "0");
+}
+
+function serialForCustomer(customer) {
+  const index = state.customers.findIndex((item) => item.id === customer?.id);
+  return index >= 0 ? String(index + 1).padStart(4, "0") : nextCustomerSerial();
 }
 
 function setMessage(target, text = "", type = "") {
@@ -96,15 +104,15 @@ function setCustomerMode(mode) {
   setMessage(el.customerMessage);
   if (mode === "phone") {
     state.pendingPhone = "";
-    el.customerLabel.innerHTML = "Customer Mobile <span>Optional</span>";
-    el.customerInput.placeholder = "01XXXXXXXXX";
+    el.customerLabel.textContent = "Mobile Number";
+    el.customerInput.placeholder = "Optional";
     el.customerInput.inputMode = "tel";
     el.customerInput.maxLength = 11;
     el.customerInputIcon.textContent = "☎";
     el.skipCustomerName.classList.add("hidden");
   } else {
-    el.customerLabel.innerHTML = "Customer Name <span>Optional</span>";
-    el.customerInput.placeholder = "Enter customer name";
+    el.customerLabel.textContent = "Customer Name";
+    el.customerInput.placeholder = "Name (Optional)";
     el.customerInput.inputMode = "text";
     el.customerInput.maxLength = 80;
     el.customerInputIcon.textContent = "♙";
@@ -117,7 +125,9 @@ function showCustomerChip(customer, pending = false) {
   el.customerChip.classList.remove("hidden");
   el.customerChipName.textContent = customer.name || (pending ? "New customer" : "Customer");
   el.customerChipPhone.textContent = customer.phone;
+  el.customerSerial.value = pending ? "NEW" : serialForCustomer(customer);
   if (!pending) {
+    el.customerLabel.textContent = "Customer";
     el.customerEntry.classList.add("hidden");
     el.changeCustomer.classList.remove("hidden");
   } else {
@@ -133,6 +143,7 @@ function resetCustomer(focus = false) {
   el.customerEntry.classList.remove("hidden");
   el.changeCustomer.classList.add("hidden");
   setCustomerMode("phone");
+  el.customerSerial.value = nextCustomerSerial();
   if (focus) el.customerInput.focus();
 }
 
@@ -254,12 +265,15 @@ function totals() {
 }
 
 function renderCart() {
-  el.cartBody.innerHTML = state.cart.map((item) => `
+  el.cartBody.innerHTML = state.cart.map((item, index) => `
     <tr data-id="${escapeHTML(item.id)}">
-      <td class="product-cell"><strong>${escapeHTML(item.name)}</strong><small>${escapeHTML(item.id)} · ${escapeHTML(item.barcode)}</small></td>
-      <td class="price-cell">${money(item.price)}</td>
+      <td>${index + 1}</td>
+      <td class="code-cell">${escapeHTML(item.id)}</td>
+      <td class="product-cell"><strong>${escapeHTML(item.name)}</strong><small>${escapeHTML(item.barcode)}</small></td>
       <td><div class="qty-control"><button type="button" data-action="decrease" aria-label="Decrease ${escapeHTML(item.name)}">−</button><span>${item.qty}</span><button type="button" data-action="increase" aria-label="Increase ${escapeHTML(item.name)}">+</button></div></td>
+      <td class="price-cell">${money(item.price)}</td>
       <td class="total-cell">${money(item.price * item.qty)}</td>
+      <td>${item.stock}</td>
       <td><button class="delete-item" type="button" data-action="remove" aria-label="Remove ${escapeHTML(item.name)}">×</button></td>
     </tr>`).join("");
   el.emptyCart.classList.toggle("hidden", state.cart.length > 0);
@@ -312,7 +326,7 @@ function closeProductModal() {
 function receiptData() {
   const value = totals();
   return {
-    invoice: el.invoiceNumber.textContent,
+    invoice: el.invoiceNumber.value,
     createdAt: new Date(),
     customer: state.selectedCustomer,
     items: state.cart.map((item) => ({ ...item })),
@@ -370,10 +384,11 @@ function saveCurrentSale({ print = false } = {}) {
   storage.set("fahimPos.invoiceCounter", state.invoiceCounter);
   if (print) window.print();
   state.cart = [];
-  el.discountInput.value = "0";
+  el.discountInput.value = "0.00";
   el.paidInput.value = "";
   resetCustomer();
-  el.invoiceNumber.textContent = invoiceNo();
+  el.invoiceNumber.value = invoiceNo();
+  el.dateDisplay.value = new Date().toLocaleDateString("en-US");
   renderCart();
   toast(print ? "Sale saved and receipt sent to printer." : "Sale saved successfully.", "success");
   el.barcodeInput.focus();
@@ -393,6 +408,7 @@ function updateNetworkStatus() {
 }
 
 el.themeToggle.addEventListener("click", () => applyTheme(el.html.dataset.theme === "dark" ? "light" : "dark"));
+el.logoutButton.addEventListener("click", () => toast("Logout will be active after the login system is connected."));
 el.paperSize.addEventListener("change", () => storage.set("fahimPos.paperSize", el.paperSize.value));
 el.customerInput.addEventListener("input", () => {
   if (state.customerMode === "phone") el.customerInput.value = cleanPhone(el.customerInput.value);
@@ -449,7 +465,9 @@ window.addEventListener("keydown", (event) => {
 
 applyTheme(storage.get("fahimPos.theme", window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
 el.paperSize.value = storage.get("fahimPos.paperSize", "58");
-el.invoiceNumber.textContent = invoiceNo();
+el.invoiceNumber.value = invoiceNo();
+el.dateDisplay.value = new Date().toLocaleDateString("en-US");
+el.customerSerial.value = nextCustomerSerial();
 updateNetworkStatus();
 renderCart();
 renderProductList();
